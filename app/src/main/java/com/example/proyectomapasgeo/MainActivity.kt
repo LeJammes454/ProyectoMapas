@@ -1,6 +1,7 @@
 package com.example.proyectomapasgeo
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -21,6 +22,8 @@ import org.osmdroid.views.overlay.Marker
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import android.graphics.Color
+import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import org.osmdroid.views.overlay.Polyline
 import retrofit2.Call
@@ -36,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private var currentRoute: Polyline? = null
 
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -105,6 +109,7 @@ class MainActivity : AppCompatActivity() {
             override fun singleTapConfirmedHelper(geoPoint: GeoPoint): Boolean {
                 addUserMarker(geoPoint.latitude, geoPoint.longitude)
                 drawRouteToMarker(geoPoint)
+                showMarkerInfo(geoPoint)
                 return true
             }
 
@@ -120,7 +125,13 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-    // (Código existente para onCreate, onResume, onPause, etc.)
+    private fun showMarkerInfo(geoPoint: GeoPoint) {
+        val infoTextView = findViewById<TextView>(R.id.infoTextView)
+        val infoText = "Latitud: ${geoPoint.latitude}, Longitud: ${geoPoint.longitude}"
+        infoTextView.text = infoText
+        infoTextView.visibility = View.VISIBLE
+    }
+
 
     private fun addMarker(latitude: Double, longitude: Double, label: String? = null, icon: Drawable? = null) {
         // (Código existente para crear y agregar un marcador)
@@ -181,7 +192,7 @@ class MainActivity : AppCompatActivity() {
                         val routePoints = coordinates.map { GeoPoint(it[1], it[0]) }
 
                         currentRoute = Polyline(mapView).apply {
-                            color = Color.BLUE
+                            color = Color.CYAN
                             width = 10f
                             setPoints(routePoints)
                         }

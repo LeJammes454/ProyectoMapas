@@ -42,7 +42,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
+    //Implemetancion de osmdroid para el mapa
     implementation 'org.osmdroid:osmdroid-android:6.1.11'
+
+    //Implementacion para el uso del boton flotante
     implementation 'com.google.android.material:material:1.8.0'
 
+    //Implementacion de retrofit para el consumo de api
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
 }

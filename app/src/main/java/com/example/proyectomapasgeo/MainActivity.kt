@@ -18,12 +18,21 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import android.graphics.Color
+import android.widget.Toast
+import org.osmdroid.views.overlay.Polyline
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
-    private lateinit var myLocationOverlay: MyLocationNewOverlay
+    private var myLocationOverlay: MyLocationNewOverlay? = null
+
     private var userMarker: Marker? = null // Almacena el marcador del usuario
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,20 +62,30 @@ class MainActivity : AppCompatActivity() {
         mapView.overlays.add(myLocationOverlay)
          */
 
+        /*
         //Agregar la capa de ubiccion del usuario
         val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), mapView)
         myLocationOverlay.enableMyLocation()
         myLocationOverlay.enableFollowLocation()
         mapView.overlays.add(myLocationOverlay)
 
+         */
+
+        myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), mapView)
+        myLocationOverlay?.enableMyLocation()
+        myLocationOverlay?.enableFollowLocation()
+        mapView.overlays.add(myLocationOverlay)
+
+
         // Configurar el botón flotante para centrar el mapa en la ubicación del usuario
         val centerMapFab: FloatingActionButton = findViewById(R.id.center_map_fab)
         centerMapFab.setOnClickListener {
-            val currentLocation = myLocationOverlay.myLocation
+            val currentLocation = myLocationOverlay!!.myLocation
             if (currentLocation != null) {
                 mapController.animateTo(currentLocation)
             }
         }
+        /*
         // Agregar MapEventsOverlay para manejar eventos de toque en el mapa
         val mapEventsReceiver = object : MapEventsReceiver {
             override fun singleTapConfirmedHelper(geoPoint: GeoPoint): Boolean {
@@ -79,8 +98,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+         */
+
+        val mapEventsReceiver = object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(geoPoint: GeoPoint): Boolean {
+                addUserMarker(geoPoint.latitude, geoPoint.longitude)
+                drawRouteToMarker(geoPoint)
+                return true
+            }
+
+            override fun longPressHelper(geoPoint: GeoPoint): Boolean {
+                return false
+            }
+        }
+
         val mapEventsOverlay = MapEventsOverlay(mapEventsReceiver)
         mapView.overlays.add(mapEventsOverlay)
+
+
+
+
     }
     // (Código existente para onCreate, onResume, onPause, etc.)
 
@@ -112,6 +149,54 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         mapView.onPause()
     }
+
+    private fun createOpenRouteServiceApi(): OpenRouteServiceApi {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.openrouteservice.org/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        return retrofit.create(OpenRouteServiceApi::class.java)
+    }
+
+    private fun drawRouteToMarker(geoPoint: GeoPoint) {
+        val currentLocation = myLocationOverlay?.myLocation ?: return
+        val start = "${currentLocation.longitude},${currentLocation.latitude}"
+        val end = "${geoPoint.longitude},${geoPoint.latitude}"
+
+        val openRouteServiceApi = createOpenRouteServiceApi()
+        openRouteServiceApi.getRoute(start, end).enqueue(object : Callback<RouteResponse> {
+            override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
+                if (response.isSuccessful) {
+                    val routeResponse = response.body()
+                    if (routeResponse != null) {
+                        // Dibujar la ruta en el mapa
+                        val coordinates = routeResponse.features[0].geometry.coordinates
+                        val routePoints = coordinates.map { GeoPoint(it[1], it[0]) }
+
+                        val polyline = Polyline(mapView).apply {
+                            color = Color.BLUE
+                            width = 10f
+                            setPoints(routePoints)
+                        }
+
+                        mapView.overlays.add(polyline)
+                        mapView.invalidate()
+                    } else {
+                        Toast.makeText(this@MainActivity, "No se pudo obtener la ruta", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this@MainActivity, "Error en la respuesta de la API", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {
+                Toast.makeText(this@MainActivity, "Error al obtener la ruta", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+
 
     private fun requestPermissionsIfNecessary() {
         if (Build.VERSION.SDK_INT >= 23) {

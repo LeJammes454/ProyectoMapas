@@ -32,8 +32,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
     private var myLocationOverlay: MyLocationNewOverlay? = null
-
     private var userMarker: Marker? = null // Almacena el marcador del usuario
+    private var currentRoute: Polyline? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -168,19 +169,24 @@ class MainActivity : AppCompatActivity() {
         openRouteServiceApi.getRoute(start, end).enqueue(object : Callback<RouteResponse> {
             override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
                 if (response.isSuccessful) {
-                    val routeResponse = response.body()
+                    val routeResponse = response.body() // Aquí se asigna la respuesta a la variable routeResponse
                     if (routeResponse != null) {
-                        // Dibujar la ruta en el mapa
+                        // Elimina la ruta anterior del mapa
+                        currentRoute?.let {
+                            mapView.overlays.remove(it)
+                        }
+
+                        // Dibuja la nueva ruta en el mapa
                         val coordinates = routeResponse.features[0].geometry.coordinates
                         val routePoints = coordinates.map { GeoPoint(it[1], it[0]) }
 
-                        val polyline = Polyline(mapView).apply {
+                        currentRoute = Polyline(mapView).apply {
                             color = Color.BLUE
                             width = 10f
                             setPoints(routePoints)
                         }
 
-                        mapView.overlays.add(polyline)
+                        mapView.overlays.add(currentRoute!!)
                         mapView.invalidate()
                     } else {
                         Toast.makeText(this@MainActivity, "No se pudo obtener la ruta", Toast.LENGTH_SHORT).show()
@@ -195,6 +201,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
 
 
 

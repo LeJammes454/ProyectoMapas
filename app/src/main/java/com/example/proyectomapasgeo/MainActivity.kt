@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -45,10 +46,20 @@ class MainActivity : AppCompatActivity() {
         mapView.overlays.add(myLocationOverlay)
          */
 
+        //Agregar la capa de ubiccion del usuario
         val myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), mapView)
         myLocationOverlay.enableMyLocation()
         myLocationOverlay.enableFollowLocation()
         mapView.overlays.add(myLocationOverlay)
+
+        // Configurar el botón flotante para centrar el mapa en la ubicación del usuario
+        val centerMapFab: FloatingActionButton = findViewById(R.id.center_map_fab)
+        centerMapFab.setOnClickListener {
+            val currentLocation = myLocationOverlay.myLocation
+            if (currentLocation != null) {
+                mapController.animateTo(currentLocation)
+            }
+        }
     }
 
     override fun onResume() {
@@ -87,4 +98,3 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_PERMISSIONS_REQUEST_CODE = 1
     }
 }
-

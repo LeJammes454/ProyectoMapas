@@ -121,9 +121,6 @@ class MainActivity : AppCompatActivity() {
         val mapEventsOverlay = MapEventsOverlay(mapEventsReceiver)
         mapView.overlays.add(mapEventsOverlay)
 
-
-
-
     }
     private fun showMarkerInfo(geoPoint: GeoPoint) {
         val infoTextView = findViewById<TextView>(R.id.infoTextView)
@@ -241,4 +238,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_PERMISSIONS_REQUEST_CODE = 1
     }
+
+
 }

@@ -2,6 +2,7 @@ package com.example.proyectomapasgeo
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -14,10 +15,16 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
+import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.Marker
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
+    private lateinit var myLocationOverlay: MyLocationNewOverlay
+    private var userMarker: Marker? = null // Almacena el marcador del usuario
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +67,40 @@ class MainActivity : AppCompatActivity() {
                 mapController.animateTo(currentLocation)
             }
         }
+        // Agregar MapEventsOverlay para manejar eventos de toque en el mapa
+        val mapEventsReceiver = object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(geoPoint: GeoPoint): Boolean {
+                addUserMarker(geoPoint.latitude, geoPoint.longitude)
+                return true
+            }
+
+            override fun longPressHelper(geoPoint: GeoPoint): Boolean {
+                return false
+            }
+        }
+
+        val mapEventsOverlay = MapEventsOverlay(mapEventsReceiver)
+        mapView.overlays.add(mapEventsOverlay)
+    }
+    // (Código existente para onCreate, onResume, onPause, etc.)
+
+    private fun addMarker(latitude: Double, longitude: Double, label: String? = null, icon: Drawable? = null) {
+        // (Código existente para crear y agregar un marcador)
+    }
+
+    private fun addUserMarker(latitude: Double, longitude: Double) {
+        userMarker?.let {
+            mapView.overlays.remove(it)
+        }
+
+        userMarker = Marker(mapView).apply {
+            position = GeoPoint(latitude, longitude)
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            icon = resources.getDrawable(R.drawable.marker_icon) // Reemplaza 'marker_icon' con el nombre de tu recurso de imagen personalizado
+        }
+
+        mapView.overlays.add(userMarker!!)
+        mapView.invalidate()
     }
 
     override fun onResume() {
